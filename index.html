@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic API CRUD | Kaushika Vaghela</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-title {
+            margin: 0;
+        }
+        footer {
+            padding: 10px 0;
+            text-align: center;
+            background-color: #f8f9fa;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="text-center">Dynamic API CRUD</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-primary" data-toggle="modal" data-target="#createProductModal">Add Product</button>
+        <div>
+            <input type="text" id="project-name" placeholder="Project Name" value="project_1" class="form-control d-inline-block" style="width: 150px;">
+            <input type="text" id="module-name" placeholder="Module Name" value="product" class="form-control d-inline-block" style="width: 150px;">
+            <button id="sync-btn" class="btn btn-secondary">Sync</button>
+        </div>
+    </div>
+
+    <table id="productTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <!-- <th>ID</th> -->
+                <th>Name</th>
+                <th>Price</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Create Product Modal -->
+<div class="modal fade" id="createProductModal" tabindex="-1" role="dialog" aria-labelledby="createProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createProductModalLabel">Create Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="create-product-form">
+                    <div class="form-group">
+                        <label for="create-name">Name:</label>
+                        <input type="text" class="form-control" id="create-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="create-price">Price:</label>
+                        <input type="number" class="form-control" id="create-price" name="price" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="create-description">Description:</label>
+                        <textarea class="form-control" id="create-description" name="description" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Product Modal -->
+<div class="modal fade" id="updateProductModal" tabindex="-1" role="dialog" aria-labelledby="updateProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateProductModalLabel">Update Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="update-product-form">
+                    <input type="hidden" id="update-id">
+                    <div class="form-group">
+                        <label for="update-name">Name:</label>
+                        <input type="text" class="form-control" id="update-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-price">Price:</label>
+                        <input type="number" class="form-control" id="update-price" name="price" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-description">Description:</label>
+                        <textarea class="form-control" id="update-description" name="description" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<footer style="justify-content: center;">
+    kaushika vaghela | kaushikavaghela16@gmail.com
+</footer>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    let projectName = 'project_1';
+    let moduleName = 'product';
+    let baseUrl = `https://dynamic-api-gamma.vercel.app/${projectName}/${moduleName}`;
+    let productTable;
+
+    $(document).ready(function() {
+        productTable = $('#productTable').DataTable({
+            columns: [
+                // { data: 'id' },
+                { data: 'name' },
+                { data: 'price' },
+                { data: 'description' },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `
+                            <button class="btn btn-warning btn-sm update-button" data-id="${data.id}">Update</button>
+                            <button class="btn btn-danger btn-sm delete-button" data-id="${data.id}">Delete</button>
+                        `;
+                    }
+                }
+            ]
+        });
+
+        loadProducts();
+
+        $('#sync-btn').on('click', function() {
+            projectName = $('#project-name').val().toLowerCase();
+            moduleName = $('#module-name').val().toLowerCase();
+            baseUrl = `http://localhost:3000/${projectName}/${moduleName}`;
+            loadProducts();
+        });
+
+        $('#create-product-form').on('submit', function(event) {
+            event.preventDefault();
+            const name = $('#create-name').val();
+            const price = $('#create-price').val();
+            const description = $('#create-description').val();
+
+            fetch(baseUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { name, price, description } })
+            })
+            .then(response => response.json())
+            .then(data => {
+                $('#createProductModal').modal('hide');
+                loadProducts();
+            });
+        });
+
+        $('#update-product-form').on('submit', function(event) {
+            event.preventDefault();
+            const id = $('#update-id').val();
+            const name = $('#update-name').val();
+            const price = $('#update-price').val();
+            const description = $('#update-description').val();
+
+            fetch(`${baseUrl}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { name, price, description } })
+            })
+            .then(response => response.json())
+            .then(data => {
+                $('#updateProductModal').modal('hide');
+                loadProducts();
+            });
+        });
+
+        $('#productTable tbody').on('click', '.update-button', function() {
+            const id = $(this).data('id');
+            fetch(`${baseUrl}/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                $('#update-id').val(data.data.id);
+                $('#update-name').val(data.data.name);
+                $('#update-price').val(data.data.price);
+                $('#update-description').val(data.data.description);
+                $('#updateProductModal').modal('show');
+            });
+        });
+
+        $('#productTable tbody').on('click', '.delete-button', function() {
+            const id = $(this).data('id');
+            if (confirm('Are you sure you want to delete this product?')) {
+                fetch(`${baseUrl}/${id}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    loadProducts();
+                });
+            }
+        });
+    });
+
+    function loadProducts() {
+        fetch(`${baseUrl}?limit=100&page=1`)
+        .then(response => response.json())
+        .then(data => {
+            productTable.clear();
+            productTable.rows.add(data.data.results);
+            productTable.draw();
+        });
+    }
+</script>
+
+</body>
+</html>
