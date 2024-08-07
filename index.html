@@ -135,6 +135,9 @@
     let productTable;
 
     $(document).ready(function() {
+        setTimeout(()=>{
+            $('#sync-btn').trigger('click')
+        },1000)
         productTable = $('#productTable').DataTable({
             columns: [
                 // { data: 'id' },
@@ -153,7 +156,7 @@
             ]
         });
 
-        loadProducts();
+        // loadProducts();
 
         $('#sync-btn').on('click', function() {
             projectName = $('#project-name').val().toLowerCase();
